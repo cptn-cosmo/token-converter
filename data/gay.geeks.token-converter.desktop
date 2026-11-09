@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Token Converter
+GenericName=Batch Media Converter
+Comment=Recursively batch-convert media files in project folders
+Exec=token-converter
+Icon=token-converter
+Terminal=false
+Categories=Qt;KDE;Graphics;Utility;
+Keywords=convert;webp;png;batch;image;compress;
+StartupNotify=true

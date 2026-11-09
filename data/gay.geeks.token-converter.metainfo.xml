@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: CC0-1.0 -->
+<component type="desktop-application">
+  <id>gay.geeks.token-converter</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <name>Token Converter</name>
+  <summary>Recursively batch-convert media files in project folders</summary>
+  <description>
+    <p>
+      Token Converter converts media files inside your project folders in bulk, for
+      example all PNG images to WebP. Each project has its own conversion rules,
+      quality settings and renaming options, seeded from global defaults.
+    </p>
+    <ul>
+      <li>Per-project rules such as “png → webp”, lossless or lossy quality</li>
+      <li>Safe writes: originals are only touched after the result was verified</li>
+      <li>Replace, trash, back up or keep the originals</li>
+      <li>Dry-run preview, include/exclude patterns and filename templates</li>
+      <li>Parallel conversion with pause, resume and cancel</li>
+    </ul>
+  </description>
+  <launchable type="desktop-id">gay.geeks.token-converter.desktop</launchable>
+  <provides>
+    <binary>token-converter</binary>
+  </provides>
+  <categories>
+    <category>Graphics</category>
+    <category>Utility</category>
+  </categories>
+  <content_rating type="oars-1.1"/>
+  <developer id="gay.geeks">
+    <name>Cosmo</name>
+  </developer>
+  <releases>
+    <release version="0.1.0" date="2026-11-09">
+      <description>
+        <p>First release.</p>
+      </description>
+    </release>
+  </releases>
+</component>

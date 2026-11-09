@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SPDX-License-Identifier: CC0-1.0 -->
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3daee9"/>
+      <stop offset="1" stop-color="#1d78b8"/>
+    </linearGradient>
+    <linearGradient id="card" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#e8eef3"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="112" height="112" rx="24" fill="url(#bg)"/>
+  <!-- source image -->
+  <g transform="translate(18 26)">
+    <rect width="44" height="52" rx="6" fill="url(#card)"/>
+    <path d="M6 42 L17 28 L25 36 L31 30 L38 42 Z" fill="#27ae60"/>
+    <circle cx="30" cy="14" r="5" fill="#f67400"/>
+  </g>
+  <!-- converted, smaller image -->
+  <g transform="translate(74 50)">
+    <rect width="36" height="42" rx="6" fill="url(#card)"/>
+    <path d="M5 34 L14 23 L20 29 L25 24 L31 34 Z" fill="#27ae60"/>
+    <circle cx="24" cy="11" r="4" fill="#f67400"/>
+  </g>
+  <!-- arrow -->
+  <path d="M56 92 C 60 104, 76 106, 84 98" fill="none" stroke="#fcfcfc" stroke-width="6" stroke-linecap="round"/>
+  <path d="M78 92 L 88 96 L 82 105 Z" fill="#fcfcfc" stroke="#fcfcfc" stroke-width="3" stroke-linejoin="round"/>
+</svg>
