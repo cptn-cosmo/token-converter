@@ -6,7 +6,6 @@ qt_add_executable(token-converter
 target_include_directories(token-converter PRIVATE ${CMAKE_BINARY_DIR}/src)
 target_compile_definitions(token-converter PRIVATE TRANSLATION_DOMAIN="token-converter")
 
-set_source_files_properties(../../data/token-converter.svg PROPERTIES QT_RESOURCE_ALIAS token-converter.svg)
 set_source_files_properties(qml/SettingLabels.js PROPERTIES QT_QML_SKIP_QMLDIR_ENTRY TRUE)
 
 qt_add_qml_module(token-converter
@@ -26,10 +25,13 @@ qt_add_qml_module(token-converter
         qml/ModifiedMarker.qml
         qml/ApplyToAllDialog.qml
         qml/SettingLabels.js
-    RESOURCES
-        ../../data/token-converter.svg
-    RESOURCE_PREFIX /
-    NO_RESOURCE_TARGET_PATH
+)
+
+# Fallback window icon when the icon theme has none installed
+qt_add_resources(token-converter "icons"
+    PREFIX /
+    BASE ../../data
+    FILES ../../data/token-converter.svg
 )
 
 target_link_libraries(token-converter PRIVATE

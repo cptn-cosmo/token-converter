@@ -74,6 +74,21 @@ jobs:
           echo "package=$pkg" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
+      - name: Smoke-test the installed package
+        run: |
+          pacman -U --noconfirm "packaging/arch/${{ steps.makepkg.outputs.package }}"
+          cd "$(mktemp -d)" # away from the build tree, like a real install
+          set +e
+          QT_QPA_PLATFORM=offscreen timeout 10 token-converter > app.log 2>&1
+          rc=$?
+          set -e
+          cat app.log
+          # 124 = still running when the timeout hit, i.e. the UI loaded
+          if [ "$rc" -ne 124 ] || grep -q "failed to load component" app.log; then
+            echo "::error::token-converter did not start (exit code $rc)"
+            exit 1
+          fi
+
       - name: Upload package artifact
         uses: actions/upload-artifact@v4
         with:
