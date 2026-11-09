@@ -33,6 +33,11 @@
     <name>Cosmo</name>
   </developer>
   <releases>
+    <release version="0.1.1" date="2026-11-09">
+      <description>
+        <p>Fixes the application failing to start when installed (“Module contains no type named Main”).</p>
+      </description>
+    </release>
     <release version="0.1.0" date="2026-11-09">
       <description>
         <p>First release.</p>
