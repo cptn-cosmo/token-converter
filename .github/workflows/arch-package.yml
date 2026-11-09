@@ -1,15 +1,22 @@
 name: Arch Linux package
 
+# Branch pushes and pull requests build a prerelease package
+# (e.g. 0.1.0.r5.gabc1234) that is only kept as a workflow artifact.
+#
+# Pushing a version tag (v0.2.0) is a release: it builds the package as
+# version 0.2.0, creates a GitHub release with the package attached,
+# uploads it to repo.geeks.gay and rebuilds the repo database.
+
 on:
   push:
-    branches: [main]
+    branches: ['**']
     tags: ['v*']
   pull_request:
   workflow_dispatch:
 
 concurrency:
   group: arch-package-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
 
 permissions:
   contents: read
@@ -24,6 +31,7 @@ jobs:
     container: archlinux:base-devel
     outputs:
       package: ${{ steps.makepkg.outputs.package }}
+      version: ${{ steps.makepkg.outputs.version }}
     steps:
       - name: Install build dependencies
         run: |
@@ -34,7 +42,21 @@ jobs:
       - name: Check out sources
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # pkgver() counts commits
+          fetch-depth: 0 # pkgver() needs the history and tags
+
+      - name: Validate release tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          cmake_version=$(sed -nE 's/^project\(token-converter VERSION ([0-9.]+).*/\1/p' CMakeLists.txt)
+          if ! [[ "$tag" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Release tags must look like v1.2.3 (got $GITHUB_REF_NAME)"
+            exit 1
+          fi
+          if [ "$tag" != "$cmake_version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match the CMake project version $cmake_version"
+            exit 1
+          fi
 
       - name: Build package
         id: makepkg
@@ -46,45 +68,48 @@ jobs:
           cd packaging/arch
           sudo -u builder makepkg --noconfirm --cleanbuild
           pkg=$(ls -1 *.pkg.tar.zst | head -n1)
-          echo "Built $pkg"
+          # makepkg writes the computed pkgver back into the PKGBUILD
+          version=$(bash -c 'source PKGBUILD && echo "$pkgver-$pkgrel"')
+          echo "Built $pkg ($version)"
           echo "package=$pkg" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Upload package artifact
         uses: actions/upload-artifact@v4
         with:
-          name: arch-package
+          name: ${{ startsWith(github.ref, 'refs/tags/v') && 'arch-package-release' || 'arch-package-prerelease' }}
           path: packaging/arch/*.pkg.tar.zst
           if-no-files-found: error
 
-  publish:
+  release:
     needs: build
-    # Only publish from main or version tags, never from pull requests
-    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Download package artifact
         uses: actions/download-artifact@v4
         with:
-          name: arch-package
+          name: arch-package-release
 
-      - name: Check for repo token
-        id: token
+      - name: Create GitHub release
         env:
-          REPO_API_TOKEN: ${{ secrets.API_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+          PACKAGE: ${{ needs.build.outputs.package }}
         run: |
-          if [ -n "$REPO_API_TOKEN" ]; then
-            echo "present=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "::warning::API_TOKEN secret is not set; skipping upload to $REPO_URL"
-            echo "present=false" >> "$GITHUB_OUTPUT"
-          fi
+          gh release create "$GITHUB_REF_NAME" "$PACKAGE" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Token Converter ${GITHUB_REF_NAME#v}" \
+            --generate-notes \
+            --verify-tag
 
       - name: Upload package to repo.geeks.gay
-        if: steps.token.outputs.present == 'true'
         env:
           REPO_API_TOKEN: ${{ secrets.API_TOKEN }}
           PACKAGE: ${{ needs.build.outputs.package }}
         run: |
+          test -n "$REPO_API_TOKEN" || { echo "::error::The API_TOKEN repository secret is not set"; exit 1; }
           curl --fail-with-body --silent --show-error --retry 3 --retry-all-errors \
             -X POST "$REPO_URL/api/packages?arch=$REPO_ARCH" \
             -H "Authorization: Bearer $REPO_API_TOKEN" \
@@ -92,7 +117,6 @@ jobs:
           echo
 
       - name: Rebuild repo database
-        if: steps.token.outputs.present == 'true'
         env:
           REPO_API_TOKEN: ${{ secrets.API_TOKEN }}
         run: |

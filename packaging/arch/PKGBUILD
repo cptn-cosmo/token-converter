@@ -30,9 +30,19 @@ _srcroot="$(realpath "${startdir}/../..")"
 
 pkgver() {
   cd "${_srcroot}"
-  local base
-  base=$(sed -nE 's/^project\(token-converter VERSION ([0-9.]+).*/\1/p' CMakeLists.txt)
-  printf '%s.r%s.g%s' "${base}" "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)"
+  local tag base
+  # Release: HEAD is exactly a version tag -> plain version (v0.2.0 -> 0.2.0)
+  if tag=$(git describe --tags --exact-match --match 'v[0-9]*' HEAD 2>/dev/null); then
+    printf '%s' "${tag#v}"
+    return
+  fi
+  # Prerelease: <last tag or CMake version>.r<commits since>.g<hash>
+  if tag=$(git describe --tags --abbrev=0 --match 'v[0-9]*' HEAD 2>/dev/null); then
+    printf '%s.r%s.g%s' "${tag#v}" "$(git rev-list --count "${tag}..HEAD")" "$(git rev-parse --short=7 HEAD)"
+  else
+    base=$(sed -nE 's/^project\(token-converter VERSION ([0-9.]+).*/\1/p' CMakeLists.txt)
+    printf '%s.r%s.g%s' "${base}" "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)"
+  fi
 }
 
 build() {

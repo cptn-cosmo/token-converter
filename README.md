@@ -66,10 +66,17 @@ cd packaging/arch && makepkg -si
 ```
 
 The `Arch Linux package` GitHub Actions workflow builds it in an `archlinux:base-devel`
-container on every push and pull request, and keeps the package as a build artifact.
-For pushes to `main` and `v*` tags it also uploads the package to
-`repo.geeks.gay` and rebuilds the `x86_64` repo database. That needs the repository
-secret `API_TOKEN`; without it, the upload is skipped with a warning.
+container:
+
+- **Every push / pull request** builds a prerelease package versioned
+  `<last version>.r<commits>.g<hash>` and keeps it as a workflow artifact only.
+- **Pushing a version tag** (`vX.Y.Z`, must match the version in `CMakeLists.txt`)
+  builds version `X.Y.Z`, creates a GitHub release with the package attached, uploads
+  it to `repo.geeks.gay` and rebuilds the `x86_64` repo database. This uses the
+  repository secret `API_TOKEN`.
+
+To release: bump `project(token-converter VERSION …)` in `CMakeLists.txt` (and the
+`<release>` entry in the metainfo), commit, then `git tag vX.Y.Z && git push --tags`.
 
 ## Usage
 
