@@ -1,0 +1,52 @@
+# Maintainer: Cosmo <cptncosmo@gmail.com>
+# Builds from the surrounding git checkout (used by CI); no source download.
+
+pkgname=token-converter
+pkgver=0.1.0
+pkgrel=1
+pkgdesc='Recursively batch-convert media files in project folders (Qt 6 / KDE Kirigami)'
+arch=('x86_64')
+url='https://github.com/cptn-cosmo/token-converter'
+license=('GPL-3.0-or-later')
+depends=(
+  'gcc-libs'
+  'glibc'
+  'hicolor-icon-theme'
+  'kconfig'
+  'kcoreaddons'
+  'ki18n'
+  'kirigami'
+  'libwebp'
+  'qqc2-desktop-style'
+  'qt6-base'
+  'qt6-declarative'
+)
+makedepends=('cmake' 'extra-cmake-modules' 'git' 'ninja')
+options=('!debug')
+source=()
+sha256sums=()
+
+_srcroot="$(realpath "${startdir}/../..")"
+
+pkgver() {
+  cd "${_srcroot}"
+  local base
+  base=$(sed -nE 's/^project\(token-converter VERSION ([0-9.]+).*/\1/p' CMakeLists.txt)
+  printf '%s.r%s.g%s' "${base}" "$(git rev-list --count HEAD)" "$(git rev-parse --short=7 HEAD)"
+}
+
+build() {
+  cmake -B build -S "${_srcroot}" -G Ninja \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_INSTALL_PREFIX=/usr \
+    -DBUILD_TESTING=ON
+  cmake --build build
+}
+
+check() {
+  QT_QPA_PLATFORM=offscreen ctest --test-dir build --output-on-failure
+}
+
+package() {
+  DESTDIR="${pkgdir}" cmake --install build
+}

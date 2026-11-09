@@ -1,0 +1,104 @@
+name: Arch Linux package
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: arch-package-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  REPO_URL: https://repo.geeks.gay
+  REPO_ARCH: x86_64
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: archlinux:base-devel
+    outputs:
+      package: ${{ steps.makepkg.outputs.package }}
+    steps:
+      - name: Install build dependencies
+        run: |
+          pacman -Syu --noconfirm --needed git cmake ninja extra-cmake-modules \
+            qt6-base qt6-declarative kirigami kconfig ki18n kcoreaddons \
+            qqc2-desktop-style libwebp hicolor-icon-theme
+
+      - name: Check out sources
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # pkgver() counts commits
+
+      - name: Build package
+        id: makepkg
+        run: |
+          # makepkg refuses to run as root
+          useradd --create-home builder
+          chown -R builder: "$GITHUB_WORKSPACE"
+          sudo -u builder git config --global --add safe.directory '*'
+          cd packaging/arch
+          sudo -u builder makepkg --noconfirm --cleanbuild
+          pkg=$(ls -1 *.pkg.tar.zst | head -n1)
+          echo "Built $pkg"
+          echo "package=$pkg" >> "$GITHUB_OUTPUT"
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: arch-package
+          path: packaging/arch/*.pkg.tar.zst
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    # Only publish from main or version tags, never from pull requests
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download package artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: arch-package
+
+      - name: Check for repo token
+        id: token
+        env:
+          REPO_API_TOKEN: ${{ secrets.REPO_API_TOKEN }}
+        run: |
+          if [ -n "$REPO_API_TOKEN" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::REPO_API_TOKEN secret is not set; skipping upload to $REPO_URL"
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload package to repo.geeks.gay
+        if: steps.token.outputs.present == 'true'
+        env:
+          REPO_API_TOKEN: ${{ secrets.REPO_API_TOKEN }}
+          PACKAGE: ${{ needs.build.outputs.package }}
+        run: |
+          curl --fail-with-body --silent --show-error --retry 3 --retry-all-errors \
+            -X POST "$REPO_URL/api/packages?arch=$REPO_ARCH" \
+            -H "Authorization: Bearer $REPO_API_TOKEN" \
+            -F "file=@$PACKAGE"
+          echo
+
+      - name: Rebuild repo database
+        if: steps.token.outputs.present == 'true'
+        env:
+          REPO_API_TOKEN: ${{ secrets.REPO_API_TOKEN }}
+        run: |
+          curl --fail-with-body --silent --show-error --retry 3 --retry-all-errors \
+            -X POST "$REPO_URL/api/repo/rebuild" \
+            -H "Authorization: Bearer $REPO_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"arch\": \"$REPO_ARCH\"}"
+          echo

@@ -57,6 +57,20 @@ ctest --test-dir build --output-on-failure     # QT_QPA_PLATFORM=offscreen on he
 sudo cmake --install build                      # or run build/bin/token-converter directly
 ```
 
+### Arch Linux package
+
+`packaging/arch/PKGBUILD` builds a package from the current checkout:
+
+```sh
+cd packaging/arch && makepkg -si
+```
+
+The `Arch Linux package` GitHub Actions workflow builds it in an `archlinux:base-devel`
+container on every push and pull request, and keeps the package as a build artifact.
+For pushes to `main` and `v*` tags it also uploads the package to
+`repo.geeks.gay` and rebuilds the `x86_64` repo database. That needs the repository
+secret `REPO_API_TOKEN`; without it, the upload is skipped with a warning.
+
 ## Usage
 
 1. **Add a project** with the `+` button in the sidebar and pick a folder. The name
