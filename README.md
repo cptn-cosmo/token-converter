@@ -71,12 +71,16 @@ container:
 - **Every push / pull request** builds a prerelease package versioned
   `<last version>.r<commits>.g<hash>` and keeps it as a workflow artifact only.
 - **Pushing a version tag** (`vX.Y.Z`, must match the version in `CMakeLists.txt`)
-  builds version `X.Y.Z`, creates a GitHub release with the package attached, uploads
-  it to `repo.geeks.gay` and rebuilds the `x86_64` repo database. This uses the
-  repository secret `API_TOKEN`.
+  builds version `X.Y.Z` and creates a GitHub release with the package attached.
+
+The `[geeks.gay]` pacman repository gets its package from
+[arch-pkg-builder](https://github.com/cptn-cosmo/arch-pkg-builder), which builds
+`packages/token-converter` from the release tag.
 
 To release: bump `project(token-converter VERSION …)` in `CMakeLists.txt` (and the
 `<release>` entry in the metainfo), commit, then `git tag vX.Y.Z && git push --tags`.
+To publish it to repo.geeks.gay, bump `pkgver` (and `sha256sums`, via `updpkgsums`) in
+arch-pkg-builder's `packages/token-converter/PKGBUILD`.
 
 ## Usage
 

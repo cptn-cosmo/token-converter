@@ -4,8 +4,9 @@ name: Arch Linux package
 # (e.g. 0.1.0.r5.gabc1234) that is only kept as a workflow artifact.
 #
 # Pushing a version tag (v0.2.0) is a release: it builds the package as
-# version 0.2.0, creates a GitHub release with the package attached,
-# uploads it to repo.geeks.gay and rebuilds the repo database.
+# version 0.2.0 and creates a GitHub release with the package attached.
+# Publishing to repo.geeks.gay is done by cptn-cosmo/arch-pkg-builder
+# (packages/token-converter), which builds from the release tag.
 
 on:
   push:
@@ -20,10 +21,6 @@ concurrency:
 
 permissions:
   contents: read
-
-env:
-  REPO_URL: https://repo.geeks.gay
-  REPO_ARCH: x86_64
 
 jobs:
   build:
@@ -118,26 +115,3 @@ jobs:
             --title "Token Converter ${GITHUB_REF_NAME#v}" \
             --generate-notes \
             --verify-tag
-
-      - name: Upload package to repo.geeks.gay
-        env:
-          REPO_API_TOKEN: ${{ secrets.API_TOKEN }}
-          PACKAGE: ${{ needs.build.outputs.package }}
-        run: |
-          test -n "$REPO_API_TOKEN" || { echo "::error::The API_TOKEN repository secret is not set"; exit 1; }
-          curl --fail-with-body --silent --show-error --retry 3 --retry-all-errors \
-            -X POST "$REPO_URL/api/packages?arch=$REPO_ARCH" \
-            -H "Authorization: Bearer $REPO_API_TOKEN" \
-            -F "file=@$PACKAGE"
-          echo
-
-      - name: Rebuild repo database
-        env:
-          REPO_API_TOKEN: ${{ secrets.API_TOKEN }}
-        run: |
-          curl --fail-with-body --silent --show-error --retry 3 --retry-all-errors \
-            -X POST "$REPO_URL/api/repo/rebuild" \
-            -H "Authorization: Bearer $REPO_API_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d "{\"arch\": \"$REPO_ARCH\"}"
-          echo
