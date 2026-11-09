@@ -69,7 +69,7 @@ The `Arch Linux package` GitHub Actions workflow builds it in an `archlinux:base
 container on every push and pull request, and keeps the package as a build artifact.
 For pushes to `main` and `v*` tags it also uploads the package to
 `repo.geeks.gay` and rebuilds the `x86_64` repo database. That needs the repository
-secret `REPO_API_TOKEN`; without it, the upload is skipped with a warning.
+secret `API_TOKEN`; without it, the upload is skipped with a warning.
 
 ## Usage
 

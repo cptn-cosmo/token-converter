@@ -70,19 +70,19 @@ jobs:
       - name: Check for repo token
         id: token
         env:
-          REPO_API_TOKEN: ${{ secrets.REPO_API_TOKEN }}
+          REPO_API_TOKEN: ${{ secrets.API_TOKEN }}
         run: |
           if [ -n "$REPO_API_TOKEN" ]; then
             echo "present=true" >> "$GITHUB_OUTPUT"
           else
-            echo "::warning::REPO_API_TOKEN secret is not set; skipping upload to $REPO_URL"
+            echo "::warning::API_TOKEN secret is not set; skipping upload to $REPO_URL"
             echo "present=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Upload package to repo.geeks.gay
         if: steps.token.outputs.present == 'true'
         env:
-          REPO_API_TOKEN: ${{ secrets.REPO_API_TOKEN }}
+          REPO_API_TOKEN: ${{ secrets.API_TOKEN }}
           PACKAGE: ${{ needs.build.outputs.package }}
         run: |
           curl --fail-with-body --silent --show-error --retry 3 --retry-all-errors \
@@ -94,7 +94,7 @@ jobs:
       - name: Rebuild repo database
         if: steps.token.outputs.present == 'true'
         env:
-          REPO_API_TOKEN: ${{ secrets.REPO_API_TOKEN }}
+          REPO_API_TOKEN: ${{ secrets.API_TOKEN }}
         run: |
           curl --fail-with-body --silent --show-error --retry 3 --retry-all-errors \
             -X POST "$REPO_URL/api/repo/rebuild" \
