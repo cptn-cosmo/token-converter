@@ -9,13 +9,13 @@ arch=('x86_64')
 url='https://github.com/cptn-cosmo/token-converter'
 license=('GPL-3.0-or-later')
 depends=(
-  'gcc-libs'
   'glibc'
   'hicolor-icon-theme'
   'kconfig'
   'kcoreaddons'
   'ki18n'
   'kirigami'
+  'libstdc++'
   'libwebp'
   'qqc2-desktop-style'
   'qt6-base'
